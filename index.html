@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MedOS — Medical School OS</title>
+    <link rel="manifest" href='data:application/manifest+json,{"name":"MedOS","short_name":"MedOS","start_url":".","display":"standalone","background_color":"#050508","theme_color":"#0A84FF"}'>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        /* =========================================================
+           DYNAMIC APPLE HIG GLASSMORPHISM SYSTEM (LIGHT & DARK)
+           ========================================================= */
+        :root {
+            --bg-obsidian: #050508;
+            --glass-bg: rgba(22, 22, 30, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.14);
+            --glass-hover: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #9898a0;
+            --input-bg: rgba(0, 0, 0, 0.4);
+            
+            /* Apple Colors */
+            --apple-blue: #0A84FF;
+            --apple-purple: #BF5AF2;
+            --apple-pink: #FF375F;
+            --apple-green: #30D158;
+            --apple-orange: #FF9F0A;
+            --apple-red: #FF453A;
+            --apple-cyan: #64D2FF;
+
+            --blur: blur(35px);
+            --radius-xl: 24px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --glow: 0 0 25px rgba(10, 132, 255, 0.25);
+        }
+
+        /* LIGHT MODE OVERRIDES */
+        [data-theme="light"] {
+            --bg-obsidian: #f2f2f7;
+            --glass-bg: rgba(255, 255, 255, 0.82);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --glass-hover: rgba(0, 0, 0, 0.04);
+            --text-primary: #000000;
+            --text-secondary: #6c6c70;
+            --input-bg: rgba(255, 255, 255, 0.9);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg-obsidian);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+        }
+
+        /* Ambient Glowing Background Orbs */
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        [data-theme="light"] .ambient-bg { opacity: 0.18; }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.35;
+            animation: float 18s ease-in-out infinite alternate;
+        }
+        .orb-1 { width: 450px; height: 450px; background: var(--apple-blue); top: -100px; left: -100px; }
+        .orb-2 { width: 500px; height: 500px; background: var(--apple-purple); bottom: -150px; right: -100px; animation-delay: -6s; }
+        .orb-3 { width: 350px; height: 350px; background: var(--apple-pink); top: 40%; left: 35%; animation-delay: -12s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, 30px) scale(1.1); }
+            100% { transform: translate(-30px, 50px) scale(0.95); }
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 270px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border-right: 1px solid var(--glass-border);
+            padding: 28px 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        /* RTL Layout Overrides for Arabic */
+        [dir="rtl"] .sidebar {
+            left: auto;
+            right: 0;
+            border-right: none;
+            border-left: 1px solid var(--glass-border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            padding-left: 8px;
+        }
+        [dir="rtl"] .brand { padding-left: 0; padding-right: 8px; }
+
+        .brand-badge {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--apple-blue), var(--apple-purple));
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            color: white;
+            box-shadow: var(--glow);
+        }
+
+        .nav-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--glass-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(10, 132, 255, 0.85), rgba(191, 90, 242, 0.85));
+            color: #ffffff;
+            box-shadow: 0 8px 20px rgba(10, 132, 255, 0.35);
+        }
+
+        /* Controls Widget in Sidebar */
+        .sys-controls {
+            display: flex;
+            gap: 8px;
+            background: var(--glass-hover);
+            padding: 8px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+            margin-top: 10px;
+        }
+
+        .ctrl-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .ctrl-btn.active { background: var(--apple-blue); color: white; }
+
+        .main-wrapper {
+            margin-left: 270px;
+            flex: 1;
+            padding: 36px 48px 120px 48px;
+            max-width: 1450px;
+        }
+        [dir="rtl"] .main-wrapper { margin-left: 0; margin-right: 270px; }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 100%; height: 70px; top: auto; bottom: 0;
+                flex-direction: row; border-right: none; border-left: none;
+                border-top: 1px solid var(--glass-border); padding: 6px 12px;
+                align-items: center; justify-content: space-around;
+            }
+            .brand, .sys-controls { display: none; }
+            .nav-list { flex-direction: row; width: 100%; justify-content: space-around; }
+            .nav-item { flex-direction: column; gap: 2px; font-size: 10px; padding: 6px; }
+            .main-wrapper, [dir="rtl"] .main-wrapper { margin-left: 0; margin-right: 0; padding: 20px 16px 90px 16px; }
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .grid-dashboard { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; }
+        .col-12 { grid-column: span 12; }
+        .col-6  { grid-column: span 6; }
+        .col-3  { grid-column: span 3; }
+
+        @media (max-width: 1050px) { .col-6, .col-3 { grid-column: span 12; } }
+
+        .stat-header { display: flex; align-items: center; justify-content: space-between; }
+        .stat-label { font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; }
+        .stat-value { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin: 6px 0; }
+
+        .flame-icon { display: inline-block; animation: flamePulse 1.5s ease-in-out infinite alternate; }
+        @keyframes flamePulse { 0% { transform: scale(1); } 100% { transform: scale(1.2); } }
+
+        /* Rings */
+        .rings-wrapper { display: flex; align-items: center; justify-content: space-around; padding: 12px 0; }
+        .ring-card { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .ring-svg { transform: rotate(-90deg); width: 110px; height: 110px; }
+        .ring-bg { fill: none; stroke: rgba(150, 150, 150, 0.15); stroke-width: 10; }
+        .ring-circle { fill: none; stroke-width: 10; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; transition: stroke-dashoffset 1s ease; }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--apple-blue), var(--apple-purple));
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .btn:hover { transform: scale(1.02); filter: brightness(1.15); }
+        .btn-green { background: linear-gradient(135deg, var(--apple-green), #28cd41); }
+        .btn-orange { background: linear-gradient(135deg, var(--apple-orange), #ffb340); }
+        .btn-danger { background: linear-gradient(135deg, var(--apple-red), #ff6961); }
+        .btn-secondary { background: var(--glass-hover); color: var(--text-primary); border: 1px solid var(--glass-border); }
+
+        /* Timer Hero */
+        .timer-hero { text-align: center; padding: 40px 20px; }
+        .timer-time {
+            font-size: 88px;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            margin: 20px 0;
+            letter-spacing: -2px;
+        }
+
+        /* Inputs */
+        input, select, textarea {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            padding: 14px;
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-top: 6px;
+            margin-bottom: 16px;
+            outline: none;
+        }
+
+        /* Progress Bar */
+        .progress-bar { height: 10px; background: rgba(150, 150, 150, 0.15); border-radius: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--apple-blue), var(--apple-purple)); width: 0%; transition: width 0.8s ease; }
+
+        /* Calendar Heatmap */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 14px; }
+        .cal-day { aspect-ratio: 1; border-radius: 10px; background: rgba(150, 150, 150, 0.1); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; font-weight: 700; cursor: pointer; }
+        .cal-green { background: rgba(48, 209, 88, 0.3); border-color: var(--apple-green); color: var(--apple-green); }
+        .cal-yellow { background: rgba(255, 159, 10, 0.3); border-color: var(--apple-orange); color: var(--apple-orange); }
+
+        /* Media Vault */
+        .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; }
+        .media-thumb { width: 100%; height: 100px; border-radius: var(--radius-md); object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer; }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: var(--radius-md); margin-top: 10px; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(20px); display: none; place-items: center; z-index: 1000; padding: 20px; }
+        .modal { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); width: 100%; max-width: 560px; padding: 28px; max-height: 90vh; overflow-y: auto; }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .badge-red { background: rgba(255, 69, 58, 0.2); color: var(--apple-red); border: 1px solid var(--apple-red); }
+        .badge-green { background: rgba(48, 209, 88, 0.2); color: var(--apple-green); border: 1px solid var(--apple-green); }
+        .badge-blue { background: rgba(10, 132, 255, 0.2); color: var(--apple-blue); border: 1px solid var(--apple-blue); }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Glowing Background -->
+    <div class="ambient-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Apple Sidebar Navigation -->
+    <aside class="sidebar">
+        <div>
+            <div class="brand">
+                <div class="brand-badge">🩺</div>
+                <span>MedOS</span>
+            </div>
+            <ul class="nav-list">
+                <li class="nav-item active" onclick="switchView('dashboard', this)"><span>📊</span> <span data-i18n="dashboard">Dashboard</span></li>
+                <li class="nav-item" onclick="switchView('timer', this)"><span>⏱️</span> <span data-i18n="timer">Pure Timer</span></li>
+                <li class="nav-item" onclick="switchView('curriculum', this)"><span>🧠</span> <span data-i18n="curriculum">Curriculum</span></li>
+                <li class="nav-item" onclick="switchView('revisions', this)"><span>🔄</span> <span data-i18n="revisions">Revisions</span></li>
+                <li class="nav-item" onclick="switchView('calendar', this)"><span>📅</span> <span data-i18n="calendar">Calendar</span></li>
+                <li class="nav-item" onclick="switchView('library', this)"><span>📚</span> <span data-i18n="vault">Vault & Media</span></li>
+                <li class="nav-item" onclick="switchView('stats', this)"><span>📈</span> <span data-i18n="analytics">Analytics</span></li>
+                <li class="nav-item" onclick="switchView('settings', this)"><span>⚙️</span> <span data-i18n="settings">Settings</span></li>
+            </ul>
+        </div>
+
+        <!-- Sidebar Quick Controls (Lang & Theme) -->
+        <div>
+            <div class="sys-controls">
+                <button class="ctrl-btn" id="lang-en" onclick="setLang('en')">EN 🇬🇧</button>
+                <button class="ctrl-btn" id="lang-fr" onclick="setLang('fr')">FR 🇫🇷</button>
+                <button class="ctrl-btn" id="lang-ar" onclick="setLang('ar')">AR 🇸🇦</button>
+            </div>
+            <div class="sys-controls" style="margin-top: 6px;">
+                <button class="ctrl-btn" id="theme-dark" onclick="setTheme('dark')">🌙 Dark</button>
+                <button class="ctrl-btn" id="theme-light" onclick="setTheme('light')">☀️ Light</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-wrapper">
+
+        <!-- DASHBOARD VIEW -->
+        <section id="view-dashboard">
+            <div class="glass-card" style="background: linear-gradient(135deg, rgba(10, 132, 255, 0.2), rgba(191, 90, 242, 0.2)); border-color: rgba(10, 132, 255, 0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 data-i18n="mission_title">🩺 Daily Mission: Master S1 Physiology & Anatomy</h2>
+                        <p style="color: var(--text-secondary); margin-top: 6px; font-size: 14px;" data-i18n="mission_quote">"Focus is the master key to clinical mastery. No distractions allowed."</p>
+                    </div>
+                    <div style="font-size: 32px;" class="flame-icon">🔥</div>
+                </div>
+            </div>
+
+            <div class="grid-dashboard">
+                <div class="col-3 glass-card">
+                    <div class="stat-header"><span class="stat-label" data-i18n="today_time">Today's Pure Time</span><span>⏱️</span></div>
+                    <div class="stat-value" id="dash-today-time">0h 0m</div>
+                    <div class="progress-bar"><div class="progress-fill" id="dash-today-bar"></div></div>
+                </div>
+
+                <div class="col-3 glass-card">
+                    <div class="stat-header"><span class="stat-label" data-i18n="streak">Current Streak</span><span class="flame-icon">🔥</span></div>
+                    <div class="stat-value" id="dash-streak">1 Day</div>
+                    <div style="color: var(--apple-green); font-size: 12px; font-weight: 700;">⚡ Target On Pace</div>
+                </div>
+
+                <div class="col-3 glass-card">
+                    <div class="stat-header"><span class="stat-label" data-i18n="prep_score">Preparation Score</span><span>🎯</span></div>
+                    <div class="stat-value" id="dash-prep-score" style="color: var(--apple-cyan);">0%</div>
+                    <div style="color: var(--apple-cyan); font-size: 12px; font-weight: 700;">Exam Readiness</div>
+                </div>
+
+                <div class="col-3 glass-card">
+                    <div class="stat-header"><span class="stat-label" data-i18n="weekly_target">Weekly Target</span><span>📅</span></div>
+                    <div class="stat-value" id="dash-week-time">0.0h</div>
+                    <div style="color: var(--apple-purple); font-size: 12px; font-weight: 700;">Goal: <span id="dash-week-goal">28</span>h</div>
+                </div>
+
+                <div class="col-6 glass-card">
+                    <h3 data-i18n="activity_goals">🎯 Activity Goals</h3>
+                    <div class="rings-wrapper">
+                        <div class="ring-card">
+                            <svg class="ring-svg">
+                                <circle class="ring-bg" cx="55" cy="55" r="45"></circle>
+                                <circle class="ring-circle" id="ring-daily" cx="55" cy="55" r="45" stroke="var(--apple-green)"></circle>
+                            </svg>
+                            <span style="font-size: 11px; font-weight: 800; color: var(--apple-green);" data-i18n="daily_goal_ring">DAILY GOAL</span>
+                        </div>
+                        <div class="ring-card">
+                            <svg class="ring-svg">
+                                <circle class="ring-bg" cx="55" cy="55" r="45"></circle>
+                                <circle class="ring-circle" id="ring-prep" cx="55" cy="55" r="45" stroke="var(--apple-blue)"></circle>
+                            </svg>
+                            <span style="font-size: 11px; font-weight: 800; color: var(--apple-blue);" data-i18n="prep_ring">PREPARATION</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-6 glass-card" style="display: flex; flex-direction: column; justify-content: center; text-align: center;">
+                    <h3 data-i18n="pure_mode">⚡ Pure Focus Mode</h3>
+                    <p style="color: var(--text-secondary); margin: 8px 0 16px 0; font-size: 14px;">Every single minute strictly counts focused study time.</p>
+                    <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-green" onclick="switchView('timer', document.querySelectorAll('.nav-item')[1])" data-i18n="launch_timer">🚀 Launch Pure Timer</button>
+                        <button class="btn btn-secondary" onclick="openManualEntryModal()" data-i18n="manual_entry_btn">📝 Record Session Manually</button>
+                    </div>
+                </div>
+
+                <div class="col-12 glass-card">
+                    <h3 data-i18n="overdue_revisions">🚨 Overdue Spaced Repetitions</h3>
+                    <div id="dash-revisions-preview" style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TIMER VIEW -->
+        <section id="view-timer" class="hidden">
+            <div class="glass-card timer-hero">
+                <span class="badge badge-green" id="timer-status">● Ready for Focus</span>
+                <div class="timer-time" id="timer-clock">00:00:00</div>
+                <p style="color: var(--text-secondary); margin-bottom: 24px;">Timer strictly halts when paused. Zero desk-sitting time included.</p>
+                <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+                    <button class="btn btn-green" id="btn-timer-start" onclick="Timer.start()" data-i18n="start_session">▶ Start Session</button>
+                    <button class="btn btn-orange hidden" id="btn-timer-pause" onclick="Timer.pause()" data-i18n="pause_timer">⏸ Pause Timer</button>
+                    <button class="btn btn-green hidden" id="btn-timer-resume" onclick="Timer.resume()" data-i18n="resume_timer">▶ Resume</button>
+                    <button class="btn btn-danger hidden" id="btn-timer-finish" onclick="Timer.finish()" data-i18n="finish_timer">⏹ Finish & Record</button>
+                </div>
+            </div>
+
+            <!-- MANUAL ENTRY ENTRY POINT IN TIMER VIEW -->
+            <div class="glass-card" style="text-align: center; margin-top: 20px;">
+                <h3 style="margin-bottom: 6px;">Studied Offline or Experienced Timer Issues?</h3>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">You can manually enter past study time directly into your MedOS logs.</p>
+                <button class="btn btn-secondary" onclick="openManualEntryModal()" data-i18n="manual_entry_btn">📝 Record Session Manually</button>
+            </div>
+        </section>
+
+        <!-- CURRICULUM VIEW -->
+        <section id="view-curriculum" class="hidden">
+            <h2>🧠 Second Year Curriculum OS</h2>
+            <div style="display: flex; gap: 12px; margin: 20px 0;">
+                <button class="btn" onclick="renderCurriculum(1)">Semester 1</button>
+                <button class="btn btn-secondary" onclick="renderCurriculum(2)">Semester 2</button>
+            </div>
+            <div id="curriculum-tree" class="grid-dashboard"></div>
+        </section>
+
+        <!-- REVISIONS VIEW -->
+        <section id="view-revisions" class="hidden">
+            <h2>🔄 Spaced Repetition Engine</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Built-in review scheduler: 1d ➔ 3d ➔ 7d ➔ 14d ➔ 30d ➔ 60d.</p>
+            <div class="glass-card">
+                <div id="revision-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            </div>
+        </section>
+
+        <!-- CALENDAR VIEW -->
+        <section id="view-calendar" class="hidden">
+            <h2>📅 Study Calendar & Heatmap</h2>
+            <div class="glass-card">
+                <div class="calendar-grid" id="calendar-grid"></div>
+            </div>
+            <div class="glass-card" id="calendar-day-details">
+                <h3 id="cal-selected-date">Select a day on the calendar</h3>
+                <div id="cal-day-logs" style="margin-top: 14px;"></div>
+            </div>
+        </section>
+
+        <!-- MEDICAL LIBRARY VAULT VIEW -->
+        <section id="view-library" class="hidden">
+            <h2>📚 Medical Knowledge Vault & Media Attachments</h2>
+            <div class="glass-card" style="margin-top: 16px;">
+                <h3>Attach Images, Notes, & YouTube Lessons</h3>
+                
+                <label>Select Target Chapter</label>
+                <select id="lib-chapter-select"></select>
+
+                <label>Attachment / Note Title</label>
+                <input type="text" id="lib-note-title" placeholder="e.g. Histology Slide Diagram / YouTube Lecture">
+
+                <label>YouTube Link or Web Resource (Optional)</label>
+                <input type="text" id="lib-media-url" placeholder="https://www.youtube.com/watch?v=...">
+
+                <label>Attach Local Image / Diagram (Optional)</label>
+                <input type="file" id="lib-file-input" accept="image/*" style="padding: 8px;">
+
+                <label>Personal Notes / Explanations</label>
+                <textarea id="lib-note-content" rows="3" placeholder="Type key takeaways, mnemonics..."></textarea>
+
+                <button class="btn" onclick="saveLibraryNote()">💾 Save to Medical Library</button>
+            </div>
+
+            <h3>Stored Chapter Attachments & Library</h3>
+            <div id="library-resources" class="grid-dashboard" style="margin-top: 16px;"></div>
+        </section>
+
+        <!-- ANALYTICS VIEW -->
+        <section id="view-stats" class="hidden">
+            <h2>📈 Operating Analytics</h2>
+            <div class="grid-dashboard" style="margin-top: 16px;">
+                <div class="col-3 glass-card"><div class="stat-label">Lifetime Focus</div><div class="stat-value" id="stat-lifetime">0h</div></div>
+                <div class="col-3 glass-card"><div class="stat-label">Avg Focus Rating</div><div class="stat-value" id="stat-avg-focus">0/10</div></div>
+                <div class="col-3 glass-card"><div class="stat-label">Avg Session Quality</div><div class="stat-value" id="stat-avg-quality">0/10</div></div>
+                <div class="col-3 glass-card"><div class="stat-label">Total Sessions</div><div class="stat-value" id="stat-total-sessions">0</div></div>
+            </div>
+        </section>
+
+        <!-- SETTINGS VIEW -->
+        <section id="view-settings" class="hidden">
+            <h2>⚙️ System Settings</h2>
+            <div class="glass-card" style="margin-top: 16px;">
+                <h3>Daily Study Goal (Hours)</h3>
+                <input type="number" id="setting-daily-target" value="4" min="1" max="16">
+                <button class="btn" onclick="saveSettings()">Save Configuration</button>
+            </div>
+            <div class="glass-card">
+                <h3>Data Export & Restore</h3>
+                <div style="display: flex; gap: 12px; margin-top: 12px;">
+                    <button class="btn btn-secondary" onclick="exportData()">📤 Export OS Backup JSON</button>
+                    <button class="btn btn-danger" onclick="clearData()">🗑 Reset System Data</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- EVALUATION MODAL (AFTER TIMER FINISH) -->
+    <div class="modal-overlay" id="session-modal">
+        <div class="modal">
+            <h2>🎉 Focus Session Completed</h2>
+            <p style="color: var(--text-secondary); margin-top: 4px; font-size: 13px;">Recorded Time: <span id="modal-duration-str" style="color:var(--apple-green); font-weight:800;"></span></p>
+
+            <label>Subject</label>
+            <select id="modal-subject" onchange="populateModalChapters('modal-subject', 'modal-chapter')"></select>
+
+            <label>Chapter</label>
+            <select id="modal-chapter"></select>
+
+            <label>Study Method</label>
+            <select id="modal-method">
+                <option>Active Recall 🧠</option>
+                <option>Flashcards / Anki 🎴</option>
+                <option>Reading & Highlighting 📖</option>
+                <option>Teaching / Feynman Method 👨‍🏫</option>
+                <option>Drawing & Diagrams 🎨</option>
+                <option>Spaced Revision 🔄</option>
+            </select>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <div>
+                    <label>Focus (1-10)</label>
+                    <input type="number" id="modal-focus" min="1" max="10" value="9">
+                </div>
+                <div>
+                    <label>Energy (1-10)</label>
+                    <input type="number" id="modal-energy" min="1" max="10" value="8">
+                </div>
+                <div>
+                    <label>Quality (1-10)</label>
+                    <input type="number" id="modal-quality" min="1" max="10" value="9">
+                </div>
+            </div>
+
+            <label>Completion Status</label>
+            <select id="modal-status">
+                <option value="Completed">Completed ✅</option>
+                <option value="Partially Completed">Partially Completed 🟡</option>
+                <option value="Not Completed">Not Completed ❌</option>
+            </select>
+
+            <div style="display: flex; gap: 10px; margin-top: 12px;">
+                <button class="btn btn-green" style="flex: 1;" onclick="saveSessionLog()">Save Session to OS</button>
+                <button class="btn btn-secondary" onclick="closeModal('session-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANUAL ENTRY MODAL -->
+    <div class="modal-overlay" id="manual-modal">
+        <div class="modal">
+            <h2>📝 Record Study Session Manually</h2>
+            <p style="color: var(--text-secondary); margin-top: 4px; font-size: 13px;">Log offline time or correct timer discrepancies.</p>
+
+            <label>Study Date</label>
+            <input type="date" id="manual-date">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label>Hours Studied</label>
+                    <input type="number" id="manual-hours" min="0" max="24" value="1">
+                </div>
+                <div>
+                    <label>Minutes Studied</label>
+                    <input type="number" id="manual-minutes" min="0" max="59" value="0">
+                </div>
+            </div>
+
+            <label>Subject</label>
+            <select id="manual-subject" onchange="populateModalChapters('manual-subject', 'manual-chapter')"></select>
+
+            <label>Chapter</label>
+            <select id="manual-chapter"></select>
+
+            <label>Study Method</label>
+            <select id="manual-method">
+                <option>Active Recall 🧠</option>
+                <option>Flashcards / Anki 🎴</option>
+                <option>Reading & Highlighting 📖</option>
+                <option>Teaching / Feynman Method 👨‍🏫</option>
+                <option>Drawing & Diagrams 🎨</option>
+                <option>Spaced Revision 🔄</option>
+            </select>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <div>
+                    <label>Focus (1-10)</label>
+                    <input type="number" id="manual-focus" min="1" max="10" value="8">
+                </div>
+                <div>
+                    <label>Energy (1-10)</label>
+                    <input type="number" id="manual-energy" min="1" max="10" value="8">
+                </div>
+                <div>
+                    <label>Quality (1-10)</label>
+                    <input type="number" id="manual-quality" min="1" max="10" value="8">
+                </div>
+            </div>
+
+            <label>Completion Status</label>
+            <select id="manual-status">
+                <option value="Completed">Completed ✅</option>
+                <option value="Partially Completed">Partially Completed 🟡</option>
+                <option value="Not Completed">Not Completed ❌</option>
+            </select>
+
+            <div style="display: flex; gap: 10px; margin-top: 12px;">
+                <button class="btn btn-green" style="flex: 1;" onclick="saveManualSessionLog()">Save Session Log</button>
+                <button class="btn btn-secondary" onclick="closeModal('manual-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+/* =========================================================
+   TRANSLATION DICTIONARIES (EN, FR, AR)
+   ========================================================= */
+const I18N = {
+    en: {
+        dashboard: "Dashboard", timer: "Pure Timer", curriculum: "Curriculum",
+        revisions: "Revisions", calendar: "Calendar", vault: "Vault & Media",
+        analytics: "Analytics", settings: "Settings",
+        mission_title: "🩺 Daily Mission: Master S1 Physiology & Anatomy",
+        mission_quote: '"Focus is the master key to clinical mastery. No distractions allowed."',
+        today_time: "Today's Pure Time", streak: "Current Streak", prep_score: "Preparation Score",
+        weekly_target: "Weekly Target", activity_goals: "🎯 Activity Goals",
+        daily_goal_ring: "DAILY GOAL", prep_ring: "PREPARATION", pure_mode: "⚡ Pure Focus Mode",
+        launch_timer: "🚀 Launch Pure Timer", manual_entry_btn: "📝 Record Session Manually", overdue_revisions: "🚨 Overdue Spaced Repetitions",
+        start_session: "▶ Start Session", pause_timer: "⏸ Pause Timer", resume_timer: "▶ Resume", finish_timer: "⏹ Finish & Record"
+    },
+    fr: {
+        dashboard: "Tableau de Bord", timer: "Chronomètre Pur", curriculum: "Programme",
+        revisions: "Révisions", calendar: "Calendrier", vault: "Coffre & Médias",
+        analytics: "Analytiques", settings: "Paramètres",
+        mission_title: "🩺 Mission du Jour : Maîtriser la Physiologie & Anatomie S1",
+        mission_quote: '"La concentration est la clé de la maîtrise clinique. Aucune distraction."',
+        today_time: "Temps Pur Aujourd'hui", streak: "Série Actuelle", prep_score: "Score de Préparation",
+        weekly_target: "Objectif Hebdo", activity_goals: "🎯 Objectifs d'Activité",
+        daily_goal_ring: "OBJECTIF JOUR", prep_ring: "PRÉPARATION", pure_mode: "⚡ Mode Concentration Pure",
+        launch_timer: "🚀 Lancer le Chronomètre", manual_entry_btn: "📝 Enregistrer Manuellement", overdue_revisions: "🚨 Révisions en Retard",
+        start_session: "▶ Démarrer la session", pause_timer: "⏸ Pause", resume_timer: "▶ Reprendre", finish_timer: "⏹ Terminer & Enregistrer"
+    },
+    ar: {
+        dashboard: "لوحة التحكم", timer: "المؤقت النقي", curriculum: "المنهج الدراسي",
+        revisions: "المراجعات", calendar: "التقويم", vault: "المكتبة والوسائط",
+        analytics: "الإحصائيات", settings: "الإعدادات",
+        mission_title: "🩺 مهمة اليوم: إتقان علم وظائف الأعضاء والتشريح S1",
+        mission_quote: '"التركيز هو المفتاح الأساسي للإتقان الطبي. لا مجال للمشتتات."',
+        today_time: "وقت الدراسة النقي اليوم", streak: "سلسلة الأيام", prep_score: "درجة الجاهزية",
+        weekly_target: "الهدف الأسبوعي", activity_goals: "🎯 أهداف النشاط",
+        daily_goal_ring: "الهدف اليومي", prep_ring: "الجاهزية", pure_mode: "⚡ وضع التركيز النقي",
+        launch_timer: "🚀 بدء المؤقت النقي", manual_entry_btn: "📝 تسجيل جلسة يدويًا", overdue_revisions: "🚨 مراجعات متأخرة",
+        start_session: "▶ بدء الجلسة", pause_timer: "⏸ إيقاف مؤقت", resume_timer: "▶ استئناف", finish_timer: "⏹ إنهاء وتسجيل"
+    }
+};
+
+/* Curriculum Data */
+const CURRICULUM = {
+    s1: [
+        { subject: "Anatomy", emoji: "🦴", chapters: ["Neuroanatomy", "Head", "Neck"] },
+        { subject: "Physiology", emoji: "🫀", chapters: ["Endocrine Physiology", "Renal Physiology"] },
+        { subject: "Histology", emoji: "🔬", chapters: ["Urinary System", "Digestive Accessory Glands", "Respiratory System", "Skin & Appendages", "Digestive System", "Endocrine System", "Lymphoid System"] },
+        { subject: "Biochemistry", emoji: "🧪", chapters: ["Prof. Kebir", "Prof. Khadjetou Ba"] },
+        { subject: "Other", emoji: "🌐", chapters: ["Module Santé", "English"] }
+    ],
+    s2: [
+        { subject: "Anatomy", emoji: "🦴", chapters: ["Kidney", "Pelvis / Urogenital Anatomy"] },
+        { subject: "Physiology", emoji: "🫀", chapters: ["Neurophysiology"] },
+        { subject: "Embryology", emoji: "👶", chapters: ["All Systems"] },
+        { subject: "Biophysics", emoji: "⚛️", chapters: ["Radioactivity / Radioactive Atoms"] }
+    ]
+};
+
+let db = {
+    sessions: [],
+    revisions: [],
+    library: [],
+    settings: { dailyGoalHours: 4, lang: 'en', theme: 'dark' }
+};
+
+function initOS() {
+    const saved = localStorage.getItem('medos_db_v3');
+    if (saved) db = JSON.parse(saved);
+    
+    setLang(db.settings.lang || 'en');
+    setTheme(db.settings.theme || 'dark');
+
+    renderDashboard();
+    renderCurriculum(1);
+    populateLibraryDropdown();
+}
+
+function saveDB() {
+    localStorage.setItem('medos_db_v3', JSON.stringify(db));
+    renderDashboard();
+}
+
+/* Language Switcher Engine */
+function setLang(lang) {
+    db.settings.lang = lang;
+    document.querySelectorAll('.sys-controls .ctrl-btn').forEach(b => {
+        if (b.id.startsWith('lang-')) b.classList.remove('active');
+    });
+    document.getElementById(`lang-${lang}`).classList.add('active');
+
+    // RTL for Arabic
+    if (lang === 'ar') {
+        document.documentElement.setAttribute('dir', 'rtl');
+        document.documentElement.setAttribute('lang', 'ar');
+    } else {
+        document.documentElement.setAttribute('dir', 'ltr');
+        document.documentElement.setAttribute('lang', lang);
+    }
+
+    // Translate DOM Elements
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang] && I18N[lang][key]) {
+            el.innerText = I18N[lang][key];
+        }
+    });
+
+    saveDB();
+}
+
+/* Theme Switcher Engine */
+function setTheme(theme) {
+    db.settings.theme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('theme-dark').classList.toggle('active', theme === 'dark');
+    document.getElementById('theme-light').classList.toggle('active', theme === 'light');
+    saveDB();
+}
+
+/* Navigation */
+function switchView(viewId, element) {
+    document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+    document.getElementById(`view-${viewId}`).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+    if (element) element.classList.add('active');
+
+    if (viewId === 'revisions') renderRevisions();
+    if (viewId === 'calendar') renderCalendar();
+    if (viewId === 'library') renderLibrary();
+    if (viewId === 'stats') renderStats();
+}
+
+/* =========================================================
+   TIMESTAMP-BASED TIMER ENGINE (Backgrounding & Drift Safe)
+   ========================================================= */
+const Timer = {
+    accumulatedSecs: 0,
+    startTime: null,
+    isRunning: false,
+    interval: null,
+
+    get totalSeconds() {
+        if (!this.isRunning || !this.startTime) return this.accumulatedSecs;
+        return this.accumulatedSecs + Math.floor((Date.now() - this.startTime) / 1000);
+    },
+
+    start() {
+        this.accumulatedSecs = 0;
+        this.startTime = Date.now();
+        this.isRunning = true;
+
+        document.getElementById('timer-status').innerText = '● Pure Focus Timer Running';
+        document.getElementById('btn-timer-start').classList.add('hidden');
+        document.getElementById('btn-timer-pause').classList.remove('hidden');
+        document.getElementById('btn-timer-finish').classList.remove('hidden');
+
+        this.updateDisplay();
+        clearInterval(this.interval);
+        this.interval = setInterval(() => {
+            this.updateDisplay();
+        }, 1000);
+    },
+
+    pause() {
+        if (!this.isRunning) return;
+        this.accumulatedSecs = this.totalSeconds;
+        this.isRunning = false;
+        this.startTime = null;
+        clearInterval(this.interval);
+
+        document.getElementById('timer-status').innerText = '⏸ Paused (Timer Halting)';
+        document.getElementById('btn-timer-pause').classList.add('hidden');
+        document.getElementById('btn-timer-resume').classList.remove('hidden');
+        this.updateDisplay();
+    },
+
+    resume() {
+        if (this.isRunning) return;
+        this.startTime = Date.now();
+        this.isRunning = true;
+
+        document.getElementById('timer-status').innerText = '● Pure Focus Timer Running';
+        document.getElementById('btn-timer-resume').classList.add('hidden');
+        document.getElementById('btn-timer-pause').classList.remove('hidden');
+
+        this.updateDisplay();
+        clearInterval(this.interval);
+        this.interval = setInterval(() => {
+            this.updateDisplay();
+        }, 1000);
+    },
+
+    finish() {
+        const secs = this.totalSeconds;
+        clearInterval(this.interval);
+        this.reset();
+        openSessionModal(secs);
+    },
+
+    reset() {
+        this.accumulatedSecs = 0;
+        this.startTime = null;
+        this.isRunning = false;
+        clearInterval(this.interval);
+        this.updateDisplay();
+
+        document.getElementById('timer-status').innerText = '● Ready for Focus';
+        document.getElementById('btn-timer-start').classList.remove('hidden');
+        document.getElementById('btn-timer-pause').classList.add('hidden');
+        document.getElementById('btn-timer-resume').classList.add('hidden');
+        document.getElementById('btn-timer-finish').classList.add('hidden');
+    },
+
+    updateDisplay() {
+        const total = this.totalSeconds;
+        const h = Math.floor(total / 3600).toString().padStart(2, '0');
+        const m = Math.floor((total % 3600) / 60).toString().padStart(2, '0');
+        const s = (total % 60).toString().padStart(2, '0');
+        document.getElementById('timer-clock').innerText = `${h}:${m}:${s}`;
+    }
+};
+
+// Instantly sync clock display when returning to page/tab
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && Timer.isRunning) {
+        Timer.updateDisplay();
+    }
+});
+
+/* Session Logging (Timer) */
+let currentSessionSecs = 0;
+
+function openSessionModal(secs) {
+    currentSessionSecs = secs;
+    const mins = Math.max(1, Math.round(secs / 60));
+    document.getElementById('modal-duration-str').innerText = `${mins} minutes`;
+
+    populateSubjectSelect('modal-subject');
+    populateModalChapters('modal-subject', 'modal-chapter');
+    document.getElementById('session-modal').style.display = 'grid';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function populateSubjectSelect(selectId) {
+    const subjSelect = document.getElementById(selectId);
+    subjSelect.innerHTML = '';
+    const all = [...CURRICULUM.s1, ...CURRICULUM.s2];
+    all.forEach(s => {
+        let opt = document.createElement('option');
+        opt.value = s.subject;
+        opt.innerText = `${s.emoji} ${s.subject}`;
+        subjSelect.appendChild(opt);
+    });
+}
+
+function populateModalChapters(subjSelectId, chapSelectId) {
+    const subjName = document.getElementById(subjSelectId).value;
+    const chapSelect = document.getElementById(chapSelectId);
+    chapSelect.innerHTML = '';
+
+    const all = [...CURRICULUM.s1, ...CURRICULUM.s2];
+    const match = all.find(s => s.subject === subjName);
+    if (match) {
+        match.chapters.forEach(c => {
+            let opt = document.createElement('option');
+            opt.value = c;
+            opt.innerText = c;
+            chapSelect.appendChild(opt);
+        });
+    }
+}
+
+function saveSessionLog() {
+    const session = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        durationSecs: currentSessionSecs,
+        subject: document.getElementById('modal-subject').value,
+        chapter: document.getElementById('modal-chapter').value,
+        method: document.getElementById('modal-method').value,
+        focus: parseInt(document.getElementById('modal-focus').value) || 8,
+        energy: parseInt(document.getElementById('modal-energy').value) || 8,
+        quality: parseInt(document.getElementById('modal-quality').value) || 8,
+        status: document.getElementById('modal-status').value
+    };
+
+    db.sessions.push(session);
+
+    let nextRev = new Date();
+    nextRev.setDate(nextRev.getDate() + 1);
+    db.revisions.push({
+        id: Date.now(),
+        subject: session.subject,
+        chapter: session.chapter,
+        dueDate: nextRev.toISOString().split('T')[0]
+    });
+
+    saveDB();
+    closeModal('session-modal');
+}
+
+/* =========================================================
+   MANUAL SESSION ENTRY FEATURE
+   ========================================================= */
+function openManualEntryModal() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('manual-date').value = today;
+    document.getElementById('manual-hours').value = 1;
+    document.getElementById('manual-minutes').value = 0;
+
+    populateSubjectSelect('manual-subject');
+    populateModalChapters('manual-subject', 'manual-chapter');
+    document.getElementById('manual-modal').style.display = 'grid';
+}
+
+function saveManualSessionLog() {
+    const dateVal = document.getElementById('manual-date').value || new Date().toISOString().split('T')[0];
+    const hours = parseInt(document.getElementById('manual-hours').value) || 0;
+    const minutes = parseInt(document.getElementById('manual-minutes').value) || 0;
+    const totalSecs = (hours * 3600) + (minutes * 60);
+
+    if (totalSecs <= 0) {
+        alert('Please enter a duration greater than 0 minutes.');
+        return;
+    }
+
+    const session = {
+        id: Date.now(),
+        date: dateVal,
+        durationSecs: totalSecs,
+        subject: document.getElementById('manual-subject').value,
+        chapter: document.getElementById('manual-chapter').value,
+        method: document.getElementById('manual-method').value,
+        focus: parseInt(document.getElementById('manual-focus').value) || 8,
+        energy: parseInt(document.getElementById('manual-energy').value) || 8,
+        quality: parseInt(document.getElementById('manual-quality').value) || 8,
+        status: document.getElementById('manual-status').value
+    };
+
+    db.sessions.push(session);
+
+    let nextRev = new Date(dateVal);
+    nextRev.setDate(nextRev.getDate() + 1);
+    db.revisions.push({
+        id: Date.now(),
+        subject: session.subject,
+        chapter: session.chapter,
+        dueDate: nextRev.toISOString().split('T')[0]
+    });
+
+    saveDB();
+    closeModal('manual-modal');
+    alert('Session successfully recorded!');
+}
+
+/* Dashboard & Rings */
+function renderDashboard() {
+    const today = new Date().toISOString().split('T')[0];
+    const todaySessions = db.sessions.filter(s => s.date === today);
+    const todaySecs = todaySessions.reduce((acc, s) => acc + s.durationSecs, 0);
+    const todayMins = Math.floor(todaySecs / 60);
+
+    document.getElementById('dash-today-time').innerText = `${Math.floor(todayMins/60)}h ${todayMins%60}m`;
+
+    const goalMins = (db.settings.dailyGoalHours || 4) * 60;
+    const pct = Math.min(100, Math.round((todayMins / goalMins) * 100));
+    document.getElementById('dash-today-bar').style.width = `${pct}%`;
+
+    document.getElementById('ring-daily').style.strokeDashoffset = 283 - (283 * pct / 100);
+
+    const totalHours = db.sessions.reduce((acc, s) => acc + s.durationSecs, 0) / 3600;
+    const prepScore = Math.min(100, Math.round((totalHours / 80) * 100));
+    document.getElementById('dash-prep-score').innerText = `${prepScore}%`;
+    document.getElementById('ring-prep').style.strokeDashoffset = 283 - (283 * prepScore / 100);
+
+    const revContainer = document.getElementById('dash-revisions-preview');
+    revContainer.innerHTML = '';
+    const overdue = db.revisions.filter(r => r.dueDate <= today);
+    if (overdue.length === 0) {
+        revContainer.innerHTML = '<p style="color:var(--text-secondary); font-size:13px;">No revisions overdue right now. 🎉</p>';
+    } else {
+        overdue.slice(0, 4).forEach(r => {
+            revContainer.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(150,150,150,0.06); padding:10px 14px; border-radius:12px;">
+                <span><strong>${r.subject}</strong> — ${r.chapter}</span>
+                <span class="badge badge-red">Overdue</span>
+            </div>`;
+        });
+    }
+}
+
+/* Curriculum View */
+function renderCurriculum(semester) {
+    const container = document.getElementById('curriculum-tree');
+    container.innerHTML = '';
+    const list = semester === 1 ? CURRICULUM.s1 : CURRICULUM.s2;
+
+    list.forEach(sub => {
+        let chapsHtml = sub.chapters.map(c => {
+            const chapSessions = db.sessions.filter(s => s.subject === sub.subject && s.chapter === c);
+            const hrs = (chapSessions.reduce((a, b) => a + b.durationSecs, 0) / 3600).toFixed(1);
+            return `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(150,150,150,0.1); font-size:14px;">
+                <span>📘 ${c}</span>
+                <span style="color:var(--apple-blue); font-weight:700;">${hrs} Hours</span>
+            </div>`;
+        }).join('');
+
+        container.innerHTML += `<div class="col-6 glass-card">
+            <h3>${sub.emoji} ${sub.subject}</h3>
+            <div style="margin-top:14px;">${chapsHtml}</div>
+        </div>`;
+    });
+}
+
+/* Revisions & Calendar */
+function renderRevisions() {
+    const list = document.getElementById('revision-list');
+    list.innerHTML = '';
+    if (db.revisions.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-secondary)">No scheduled revisions.</p>';
+        return;
+    }
+    db.revisions.forEach(r => {
+        list.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(150,150,150,0.06); padding:14px; border-radius:12px;">
+            <div>
+                <strong>${r.subject}</strong> — ${r.chapter}
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">Scheduled Review Date: ${r.dueDate}</div>
+            </div>
+            <button class="btn btn-green" onclick="completeRevision(${r.id})">Mark Completed ✅</button>
+        </div>`;
+    });
+}
+
+function completeRevision(id) {
+    db.revisions = db.revisions.filter(r => r.id !== id);
+    saveDB();
+    renderRevisions();
+}
+
+function renderCalendar() {
+    const grid = document.getElementById('calendar-grid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= 31; i++) {
+        const dateStr = `2026-07-${i.toString().padStart(2, '0')}`;
+        const daySessions = db.sessions.filter(s => s.date === dateStr);
+        let cls = '';
+        if (daySessions.length > 0) {
+            const hrs = daySessions.reduce((a, b) => a + b.durationSecs, 0) / 3600;
+            cls = hrs >= db.settings.dailyGoalHours ? 'cal-green' : 'cal-yellow';
+        }
+        grid.innerHTML += `<div class="cal-day ${cls}" onclick="inspectDay('${dateStr}')">${i}</div>`;
+    }
+}
+
+function inspectDay(dateStr) {
+    document.getElementById('cal-selected-date').innerText = `Activity Log for ${dateStr}`;
+    const daySessions = db.sessions.filter(s => s.date === dateStr);
+    const box = document.getElementById('cal-day-logs');
+    box.innerHTML = '';
+    if (daySessions.length === 0) {
+        box.innerHTML = '<p style="color:var(--text-secondary); font-size:13px;">No pure study logged on this day.</p>';
+        return;
+    }
+    daySessions.forEach(s => {
+        box.innerHTML += `<div style="background:rgba(150,150,150,0.06); padding:10px 14px; border-radius:10px; margin-bottom:8px; font-size:13px;">
+            <strong>${s.subject}</strong> (${s.chapter}) — ${Math.round(s.durationSecs/60)} mins [${s.method}]
+        </div>`;
+    });
+}
+
+/* Vault & Media */
+function populateLibraryDropdown() {
+    const select = document.getElementById('lib-chapter-select');
+    select.innerHTML = '';
+    const all = [...CURRICULUM.s1, ...CURRICULUM.s2];
+    all.forEach(s => {
+        s.chapters.forEach(c => {
+            let opt = document.createElement('option');
+            opt.value = `${s.subject} - ${c}`;
+            opt.innerText = `${s.emoji} ${s.subject} — ${c}`;
+            select.appendChild(opt);
+        });
+    });
+}
+
+function saveLibraryNote() {
+    const chap = document.getElementById('lib-chapter-select').value;
+    const title = document.getElementById('lib-note-title').value;
+    const url = document.getElementById('lib-media-url').value;
+    const content = document.getElementById('lib-note-content').value;
+    const fileInput = document.getElementById('lib-file-input');
+
+    if (!title) return alert('Please enter a note title.');
+
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            commitLibrarySave(chap, title, url, content, e.target.result);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        commitLibrarySave(chap, title, url, content, null);
+    }
+}
+
+function commitLibrarySave(chap, title, url, content, imageDataUrl) {
+    db.library.push({
+        id: Date.now(), chap, title, url, content, imageDataUrl, date: new Date().toLocaleDateString()
+    });
+    saveDB();
+    renderLibrary();
+    document.getElementById('lib-note-title').value = '';
+    document.getElementById('lib-media-url').value = '';
+    document.getElementById('lib-note-content').value = '';
+    document.getElementById('lib-file-input').value = '';
+    alert('Saved to Library Vault!');
+}
+
+function renderLibrary() {
+    const box = document.getElementById('library-resources');
+    box.innerHTML = '';
+    if (db.library.length === 0) {
+        box.innerHTML = '<p style="color:var(--text-secondary); grid-column: span 12;">Vault empty.</p>';
+        return;
+    }
+
+    db.library.forEach(item => {
+        let mediaHtml = '';
+        if (item.url && (item.url.includes('youtube.com/watch?v=') || item.url.includes('youtu.be/'))) {
+            const videoId = item.url.includes('v=') ? item.url.split('v=')[1].split('&')[0] : item.url.split('youtu.be/')[1].split('?')[0];
+            mediaHtml += `<div class="video-container"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
+        } else if (item.url) {
+            mediaHtml += `<p style="margin-top:8px;"><a href="${item.url}" target="_blank" style="color:var(--apple-blue);">🔗 Open Resource</a></p>`;
+        }
+
+        if (item.imageDataUrl) {
+            mediaHtml += `<div class="media-grid"><img src="${item.imageDataUrl}" class="media-thumb" onclick="window.open('${item.imageDataUrl}')"></div>`;
+        }
+
+        box.innerHTML += `<div class="col-6 glass-card">
+            <span class="badge badge-blue">${item.chap}</span>
+            <h3 style="margin-top:10px;">${item.title}</h3>
+            ${item.content ? `<p style="color:var(--text-secondary); font-size:14px; margin-top:8px; white-space:pre-wrap;">${item.content}</p>` : ''}
+            ${mediaHtml}
+        </div>`;
+    });
+}
+
+/* Analytics & Settings */
+function renderStats() {
+    const totalSecs = db.sessions.reduce((a, b) => a + b.durationSecs, 0);
+    document.getElementById('stat-lifetime').innerText = `${(totalSecs / 3600).toFixed(1)}h`;
+    document.getElementById('stat-total-sessions').innerText = db.sessions.length;
+
+    if (db.sessions.length > 0) {
+        const avgF = (db.sessions.reduce((a, b) => a + b.focus, 0) / db.sessions.length).toFixed(1);
+        const avgQ = (db.sessions.reduce((a, b) => a + b.quality, 0) / db.sessions.length).toFixed(1);
+        document.getElementById('stat-avg-focus').innerText = `${avgF}/10`;
+        document.getElementById('stat-avg-quality').innerText = `${avgQ}/10`;
+    }
+}
+
+function saveSettings() {
+    db.settings.dailyGoalHours = parseFloat(document.getElementById('setting-daily-target').value);
+    saveDB();
+    alert('Settings updated!');
+}
+
+function exportData() {
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'medos_backup.json';
+    a.click();
+}
+
+function clearData() {
+    if (confirm('Are you sure you want to erase all MedOS data?')) {
+        localStorage.removeItem('medos_db_v3');
+        location.reload();
+    }
+}
+
+window.onload = initOS;
+</script>
+</body>
+</html>
